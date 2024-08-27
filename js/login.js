@@ -25,7 +25,7 @@ document.getElementById('login-btn').addEventListener('click', function(event) {
 
     signInWithEmailAndPassword(auth, email, password)
         .then(() => {
-            window.location.href = 'main.html'; // Redirect after successful login
+            window.location.href = 'loby.html'; // Redirect after successful login
         })
         .catch(error => {
             console.error('Login Error:', error);

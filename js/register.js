@@ -30,7 +30,7 @@ document.getElementById('register-btn').addEventListener('click', function(event
 
     createUserWithEmailAndPassword(auth, email, password)
         .then(() => {
-            window.location.href = 'main.html';
+            window.location.href = 'loby.html';
         })
         .catch(error => {
             console.error('Registration Error:', error);
