@@ -33,6 +33,12 @@ html {
   align-items: center;
 }
 
+.username-container {
+}
+
+.password-container {
+
+}
 
 /* xx */
 
@@ -80,9 +86,10 @@ html {
 .input-field {
 
   background: transparent;
-  border: transparent;
+  border: none;
   font-size: 18px;
   font-weight: bold;
+  color: #000;
   padding-left: 6rem;
   width: 380px;
   height: 75px;
@@ -97,6 +104,7 @@ html {
 }
 
 .input-field::placeholder {
+  color: #000;
   font-weight: bold;
 }
 
@@ -176,4 +184,54 @@ html {
 
 .register-link:hover {
   text-decoration: underline;
+}
+
+.lobby-container {
+  height: 100%;
+  background-image: url("../assets/loby.png");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.logoB {
+  position: absolute;
+  left: 837px;
+  top: 114px;
+  width: 245.5px;
+  height: 115.81px;
+}
+
+.card {
+  position: absolute;
+}
+
+.card1 {
+  top: 303px;
+  left: 360px;
+}
+
+.card2 {
+  top: 303px;
+  left: 771px;
+}
+
+.card3 {
+  top: 306px;
+  left: 1182px;
+}
+
+.lobby-button {
+  position: absolute;
+  top: 477px; /* Adjusted relative to card1 */
+  left: 95px; /* Adjusted relative to card1 */
+  width: 187px;
+  height: 54.21px;
+  background: white;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
 }
