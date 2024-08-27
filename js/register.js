@@ -16,21 +16,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Login logic
-document.getElementById('login-btn').addEventListener('click', function(event) {
-    event.preventDefault(); // Prevent the default action of the anchor tag
-
+// Register logic
+document.getElementById('register-btn').addEventListener('click', function(event) {
+    event.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
 
-    signInWithEmailAndPassword(auth, email, password)
+    if (password != confirmPassword) {
+        alert('Passwords do not match. Please check again');
+        return;
+    }
+
+    createUserWithEmailAndPassword(auth, email, password)
         .then(() => {
-            window.location.href = 'main.html'; // Redirect after successful login
+            window.location.href = 'main.html';
         })
         .catch(error => {
-            console.error('Login Error:', error);
-            alert('Login failed: ' + error.message);
+            console.error('Registration Error:', error);
+            alert('Registration failed: ' + error.message);
         });
 });
-
-
