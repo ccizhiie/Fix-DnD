@@ -33,14 +33,6 @@ html {
   align-items: center;
 }
 
-.username-container {
-}
-
-.password-container {
-
-}
-
-/* xx */
 
 .usereg-container {
 
@@ -52,7 +44,7 @@ html {
   position: relative;
 }
 
-.emailreg-container {
+.playerreg-container {
 
   height: 100%;
   margin-bottom: 2rem;
@@ -234,4 +226,270 @@ html {
   font-size: 20px;
   font-weight: bold;
   cursor: pointer;
+}
+
+.join-container {
+
+  height: 100%;
+  background-image: url("../assets/enter.png");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.join-modal {
+  z-index: 1000; /* Sit on top */
+  left: 100px;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+  animation: fadeIn 0.5s ease-in-out; /* Fade-in animation */
+}
+
+/* Modal Content */
+.join-modal-content {
+  background: transparent; /* Make background transparent */
+  margin: 15% auto; /* Center the modal */
+  padding: 20px;
+  width: 80%; /* Could be more or less, depending on screen size */
+  max-width: 600px;
+  position: relative;
+  text-align: center; /* Center the content */
+}
+
+/* Text Input */
+.join-modal-input {
+  color: floralwhite;
+  height: 54.21px;
+  width: 320px;
+  background: transparent;
+  background-color: transparent;
+  position: absolute;
+  font-size: 25px;
+  margin-top: 50px;
+  top: 32%;
+  left: 70%;
+  transform: translate(-59%, -59%);
+  z-index: 2;
+  border: none;
+  outline: none;
+}
+
+/* Modal Image */
+.join-modal-image {
+  width: 100%;
+  height: auto;
+  z-index: 2;
+}
+
+/* Button Container */
+.join-button-container {
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally */
+  display: flex;
+  justify-content: space-between;
+  width: 400px; /* Adjust width to increase space between buttons */
+  z-index: 2; /* Ensure it is above the image */
+}
+
+/* Buttons with Background Images */
+.join-modal-button {
+  background-size: cover;
+  width: 187px; /* Adjust the width as needed */
+  height: 54.21px; /* Adjust the height as needed */
+  cursor: pointer;
+  border: none; /* Remove any border */
+  margin: 0 10px; /* Optional: add margin between buttons */
+}
+
+/* Left Button */
+.join-modal-button-left {
+  width: 150px;
+  height: 35px;
+  background-image: url('../assets/buttonj.png');
+  background-color: transparent;
+}
+
+/* Right Button */
+.join-modal-button-right {
+  width: 150px;
+  height: 35px;
+  background-color: transparent;
+  background-image: url('../assets/buttonj2.png');
+}
+
+/* The Close Button */
+.join-close-button {
+  color: #aaa;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  background: transparent; /* Remove background */
+  border: none; /* Remove border */
+}
+
+.join-close-button:hover,
+.join-close-button:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+.quick-container {
+  height: 100%;
+  background-image: url("../assets/loby.png");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.loby-container {
+  height: 100%;
+  background-image: url("../assets/loby.png");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+/* Modal Background (Opacity) */
+.modal-background {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1000; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+  animation: fadeIn 0.5s ease-in-out; /* Fade-in animation */
+}
+
+/* Modal Content */
+.modal-content {
+  background: transparent; /* Make background transparent */
+  margin: 15% auto; /* Center the modal */
+  padding: 20px;
+  width: 80%; /* Could be more or less, depending on screen size */
+  max-width: 600px;
+  position: relative;
+  text-align: center; /* Center the content */
+}
+
+/* Modal Image */
+.modal-image {
+  position: absolute; /* Position absolutely within the .modal-loby container */
+  top: 304px; /* Vertical position */
+  left: 419px; /* Horizontal position */
+  width: 1078px;
+  height: auto;
+  z-index: 2;
+}
+
+/* Specific Modal for Loby */
+.loby-container {
+  height: 100%;
+  background-image: url("../assets/loby.png");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.modal-loby { position: relative; /* This will allow absolute positioning of its children */
+  animation: fadeIn 0.5s ease-in-out; /* Fade-in animation */
+}
+
+/* Modal Content for Loby */
+.loby-content {
+  background: transparent; /* Transparent background */
+  margin: 15% auto; /* Center the modal */
+  padding: 20px;
+  width: 80%; /* Adjust as needed */
+  max-width: 600px;
+  position: relative;
+  text-align: center;
+}
+
+.loby-modal-image {
+  width: 1078;
+  height: auto;
+  z-index: 2;
+}
+/* Ensure the modal container has relative positioning */
+.modal-loby {
+  position: relative; /* This will allow absolute positioning of its children */
+  animation: fadeIn 0.5s ease-in-out; /* Fade-in animation */
+}
+
+/* Modal Image */
+.loby-modal-image {
+  position: absolute; /* Position absolutely within the .modal-loby container */
+  top: 150px; /* Vertical position */
+  left: 590px; /* Horizontal position */
+  width: 1078px;
+  height: auto;
+  z-index: 2;
+}
+
+.player-list {
+  position: absolute; /* Ensure list is positioned appropriately */
+  color: #fafafa;
+  top: 250px; /* Adjust this based on your layout */
+  left: 1000px; /* Adjust this based on your layout */
+  z-index: 3;
+  list-style-type: none; /* Remove default list styling */
+  padding: 0; /* Remove default padding */
+  font-size: 25px;
+}
+
+.player-list li {
+  margin-bottom: 40px;
+}
+
+/* Button Container */
+.loby-button-container {
+  position: absolute;
+  top: 800px; /* Adjust Y position as needed */
+  width: 100%; /* Full width for absolute positioning of buttons */
+  z-index: 3; /* Ensure it is above the image */
+  background-color: transparent; /* Ensure container background is transparent */
+}
+
+/* Buttons with Background Images */
+.loby-modal-button {
+  background-size: cover;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  position: absolute;
+}
+
+.loby-modal-button-leave {
+  left: 571px;
+  top: 0;
+  width: 200px;
+  height: 57px;
+
+  background-image: url('../assets/leave.png');
+}
+
+.loby-modal-button-ready {
+  left: 1499px;
+  top: 0;
+  width: 200px;
+  height: 57px;
+  background-image: url('../assets/ready.png');
 }
