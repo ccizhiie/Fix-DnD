@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Character Generator</title>
+</head>
+<body>
+
+    <h1>D&D Character Generator</h1>
+
+    <label for="cName">Character Name:</label>
+    <input type="text" id="cName"><br>
+
+    <label for="cClass">Class:</label>
+    <select id="cClass">
+        <option value="fighter">Fighter</option>
+        <option value="rogue">Rogue</option>
+        <option value="wizard">Wizard</option>
+        <option value="cleric">Cleric</option>
+    </select><br>
+
+    <label for="cRace">Race:</label>
+    <select id="cRace">
+        <option value="human">Human</option>
+        <option value="dwarf">Dwarf</option>
+        <option value="elf">Elf</option>
+        <option value="half-elf">Half-Elf</option>
+    </select><br>
+
+    <label for="cLevel">Level:</label>
+    <input type="number" id="cLevel" min="1" max="20"><br>
+
+    <button id="go-btn" type="button">Go</button>
+
+    <h2>Character Stats</h2>
+    <pre id="characterStats"></pre>
+
+    <!-- Load script at the end of the body to ensure DOM is loaded first -->
+    <script type="module" src="js/generate.js"></script>
+</body>
+</html>
