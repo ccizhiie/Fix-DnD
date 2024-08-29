@@ -17,25 +17,22 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-document.getElementById('logout-btn').addEventListener('click', () => {
-    signOut(auth).then(() => {
-        // Sign-out successful.
-        window.location.href = 'login.html'; // Redirect to login page after logout
-    }).catch((error) => {
-        // An error happened.
-        console.error('Logout Error:', error);
-        alert('Logout failed: ' + error.message);
-    });
-});
+// document.getElementById('logout-btn').addEventListener('click', () => {
+//     signOut(auth).then(() => {
+//         // Sign-out successful.
+//         window.location.href = 'login.html'; // Redirect to login page after logout
+//     }).catch((error) => {
+//         // An error happened.
+//         console.error('Logout Error:', error);
+//         alert('Logout failed: ' + error.message);
+//     });
+// });
 
 document.getElementById('quickplay').addEventListener('click', function() {
     joinRandomRoom();
 });
 
-document.getElementById('enter-code').addEventListener('click', function() {
-    const code = document.getElementById('room-code').value;
-    joinRoom(code);
-});
+
 
 document.getElementById('host-game').addEventListener('click', function() {
     const userId = auth.currentUser.uid;
@@ -56,7 +53,7 @@ document.getElementById('host-game').addEventListener('click', function() {
         },
         status: 'waiting'
     }).then(() => {
-        window.location.href = 'lobby.html?roomCode=' + roomCode;
+        window.location.href = 'loby.html?roomCode=' + roomCode;
     }).catch(error => {
         console.error('Error creating room:', error);
     });
@@ -85,7 +82,7 @@ function joinRoom(roomCode) {
 
                 // Update the players list in the database
                 update(roomRef, { players: players }).then(() => {
-                    window.location.href = 'lobby.html?roomCode=' + roomCode;
+                    window.location.href = 'loby.html?roomCode=' + roomCode;
                 }).catch(error => {
                     console.error('Failed to join room:', error);
                     alert('Failed to join room.');
