@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Attack Roll</title>
+</head>
+<body>
+    <h2>Character Stats</h2>
+    <pre id="characterStats"></pre>
+
+    <h1>D&D Attack Roll</h1>
+    <button type="button" id="meleeAttackRollButton">Perform Melee Attack Roll</button>
+    <button type="button" id="meleeDamageRollButton" style="display: none;">Perform Melee Damage Roll</button>
+
+    <button type="button" id="rangedAttackRollButton">Perform Ranged Attack Roll</button>
+    <button type="button" id="rangedDamageRollButton" style="display: none;">Perform Ranged Damage Roll</button>
+
+    <button type="button" id="healRollButton">Perform Heals Roll</button>
+    <button type="button" id="stealthRollButton">Perform Stealth Roll</button>
+    <button type="button" id="perceptionRollButton">Perform Perception Roll</button>
+
+    <h2>Enemy</h2>
+    <div id="enemyName"></div>
+    <div id="enemyHP"></div>
+
+    <h2>Players</h2>
+    <div id="playerList"></div>
+
+    <!-- Victory Notification and Leave Button -->
+    <div id="victoryNotification" style="display: none;">
+        <h2>Victory!</h2>
+    </div>
+    <button id="leaveButton" style="display: none;" onclick="window.location.href = 'main.html';">Leave</button>
+
+    <!-- Link to the external JavaScript file -->
+    <script type="module" src="js/dicetry.js"></script>
+</body>
+</html>

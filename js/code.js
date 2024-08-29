@@ -44,7 +44,7 @@ function joinRoom(roomCode) {
                 // Update the players list in the database
                 update(roomRef, { players: players }).then(() => {
                     // Construct the URL with the room code
-                    const redirectUrl = `loby.html?roomCode=${encodeURIComponent(roomCode)}`;
+                    const redirectUrl = `lobby.html?roomCode=` + roomCode;
                     window.location.href = redirectUrl;
                 }).catch(error => {
                     console.error('Failed to join room:', error);

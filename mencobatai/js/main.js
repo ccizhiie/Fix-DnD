@@ -19,10 +19,8 @@ const db = getDatabase(app);
 
 document.getElementById('logout-btn').addEventListener('click', () => {
     signOut(auth).then(() => {
-        // Sign-out successful.
         window.location.href = 'login.html'; // Redirect to login page after logout
     }).catch((error) => {
-        // An error happened.
         console.error('Logout Error:', error);
         alert('Logout failed: ' + error.message);
     });
@@ -56,6 +54,7 @@ document.getElementById('host-game').addEventListener('click', function() {
         },
         status: 'waiting'
     }).then(() => {
+        storeEnemyData(roomCode); // Call storeEnemyData when hosting a game
         window.location.href = 'lobby.html?roomCode=' + roomCode;
     }).catch(error => {
         console.error('Error creating room:', error);
@@ -128,5 +127,34 @@ function joinRandomRoom() {
     }).catch(error => {
         console.error('Error fetching rooms:', error);
         alert('Error finding available rooms.');
+    });
+}
+
+function storeEnemyData(roomCode) {
+    const enemyRef = ref(db, `rooms/${roomCode}/enemy`);
+
+    const enemyData = {
+        name: "Bjornsonn",
+        type: "humanoid",
+        level: 3,
+        stats: {
+            currentHP: 28,
+            maxHP: 28,
+            strength: 16,
+            dexterity: 14,
+            constitution: 14,
+            intelligence: 10,
+            wisdom: 12,
+            charisma: 8,
+            meleeDamage: 8,
+            attackStat: "strength",
+            levelBonus: 0
+        }
+    };
+
+    set(enemyRef, enemyData).then(() => {
+        console.log('Enemy data stored successfully.');
+    }).catch(error => {
+        console.error('Error storing enemy data:', error);
     });
 }
