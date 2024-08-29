@@ -268,8 +268,8 @@ html {
   position: absolute;
   font-size: 25px;
   margin-top: 50px;
-  top: 32%;
-  left: 70%;
+  top: 34%;
+  left: 55%;
   transform: translate(-59%, -59%);
   z-index: 2;
   border: none;
@@ -286,7 +286,7 @@ html {
 /* Button Container */
 .join-button-container {
   position: absolute;
-  top: 200px;
+  top: 210px;
   left: 50%;
   transform: translateX(-50%); /* Center horizontally */
   display: flex;
@@ -492,4 +492,91 @@ html {
   width: 200px;
   height: 57px;
   background-image: url('../assets/ready.png');
+}
+.char-container {
+  height: 100%;
+  background-image: url("../assets/Login.png");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.modal-char{
+  animation: fadeIn 0.5s ease-in-out forwards; /* Apply fade-in animation */
+
+}
+.content {
+  position: absolute;
+  left: 690px; /* Posisi horizontal */
+  top: 500px; /* Posisi vertikal */
+  z-index: 3;
+  width: auto;
+  animation: fadeIn 0.5s ease-in-out forwards; /* Apply fade-in animation */
+
+}
+
+.field-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 50px; /* Jarak antar baris */
+}
+
+label {
+  top: 616px;
+  left: 10px;
+  font-family: "HU The Game", Arial, sans-serif;
+  color: #fafafa; /* Warna teks label */
+  font-size: 30px;
+  width: 400px; /* Lebar label, sesuaikan jika perlu */
+}
+
+input[type="text"], select {
+  background: url('../assets/inputt.png') no-repeat center center;
+  background-size: cover;
+  color: #fff; /* Warna teks putih */
+  font-size: 20px;
+  height: 40px; /* Sesuaikan dengan tinggi yang diinginkan */
+  width: 300px; /* Menambah lebar input field */
+  margin-left: 5px; /* Jarak antara label dan input field */
+  padding: 0 10px; /* Padding untuk menambah ruang antara teks dan tepi input */
+  border: none; /* Menghilangkan border default */
+  box-sizing: border-box; /* Pastikan padding tidak menambah lebar keseluruhan */
+}
+
+select {
+  background-color: #001f3f; /* Background biru untuk dropdown */
+  color: #fff; /* Warna teks putih */
+  font-size: 20px;
+  height: 40px; /* Sesuaikan dengan tinggi yang diinginkan */
+  width: 300px; /* Lebar input field */
+  margin-left: 5px; /* Jarak antara label dan select field */
+  padding: 0 10px; /* Padding untuk menambah ruang antara teks dan tepi select */
+}
+
+/* Mengatur warna background dan teks pada setiap opsi */
+select option {
+  background-color: #2E373A; /* Background biru untuk opsi */
+  color: #fff; /* Warna teks putih */
+}
+
+/* Button dengan background image */
+.go-button {
+  background-image: url('../assets/go.png');
+  background-color: transparent;
+  background-size: cover;
+  background-position: center;
+  width: 10%; /* Lebar button */
+  height: 5%; /* Tinggi button */
+  border: none; /* Menghilangkan border default */
+  cursor: pointer; /* Pointer cursor saat hover */
+  position: absolute;
+  left: 1500px; /* Posisi horizontal, sesuaikan jika perlu */
+  bottom: 40px; /* Posisi vertikal, sesuaikan jika perlu */
+}
+.map-container {
+
+  height: 100%;
+  background-image: url("../assets/bg.png");
+  background-size: cover;
+  background-position: center;
+  position: relative;
 }

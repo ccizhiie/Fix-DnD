@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="char-container">
+    <div class="modal-char" id="modal-char">
+      <img src="../assets/char.png" alt="Modal Image" class="loby-modal-image">
+
+      <div class="content">
+        <div class="field-container">
+          <label for="cName">Character Name:</label>
+          <input type="text" id="cName">
+        </div>
+
+        <div class="field-container">
+          <label for="cClass">Class:</label>
+          <select id="cClass">
+            <option value="fighter">Fighter</option>
+            <option value="rogue">Rogue</option>
+            <option value="wizard">Wizard</option>
+            <option value="cleric">Cleric</option>
+          </select>
+        </div>
+
+        <div class="field-container">
+          <label for="cRace">Race:</label>
+          <select id="cRace">
+            <option value="human">Human</option>
+            <option value="dwarf">Dwarf</option>
+            <option value="elf">Elf</option>
+            <option value="half-elf">Half-Elf</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <a href="game.html" class="go-button"></a>
+  </div>
+</body>
+</html>

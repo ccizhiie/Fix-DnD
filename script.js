@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   readyButton.addEventListener('click', function() {
-    window.location.href = 'game.html'; // Redirect to game.html
+    window.location.href = 'character.html'; // Redirect to game.html
   });
 });
-
