@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getDatabase, ref, onValue, update, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+import { getDatabase, ref, onValue, update, get, remove } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const firebaseConfig = {
@@ -20,6 +20,7 @@ const db = getDatabase(app);
 const urlParams = new URLSearchParams(window.location.search);
 const roomCode = urlParams.get('roomCode');
 
+// Listen to changes in the room
 if (roomCode) {
     const roomRef = ref(db, 'rooms/' + roomCode);
 
@@ -31,10 +32,12 @@ if (roomCode) {
         const playerList = document.getElementById('player-list');
         playerList.innerHTML = ''; // Clear existing list
 
-        for (const [playerId, playerData] of Object.entries(players)) {
+        // Sort the players list, placing the Room Master (host) at the top
+        const sortedPlayers = Object.entries(players).sort(([idA], [idB]) => (idA === hostId ? -1 : 1));
+
+        for (const [playerId, playerData] of sortedPlayers) {
             const playerItem = document.createElement('div');
 
-            // Display "Room Master" for host and "Not Ready" for others
             if (playerId === hostId) {
                 playerItem.textContent = `${playerData.email || 'No email'} (Room Master)`;
             } else {
@@ -46,8 +49,8 @@ if (roomCode) {
 
         const startGameBtn = document.getElementById('start-game');
         const readyBtn = document.getElementById('ready-btn');
-        const unreadyBtn = document.getElementById('unready-btn'); // Add the unready button
-        const joinButton = document.getElementById('enter-code'); // Use the existing button ID for joining rooms
+        const unreadyBtn = document.getElementById('unready-btn');
+        const leaveBtn = document.getElementById('leave-btn'); // Leave button
 
         const currentUserId = auth.currentUser.uid;
 
@@ -56,6 +59,11 @@ if (roomCode) {
             startGameBtn.style.display = 'block';
         } else {
             startGameBtn.style.display = 'none';
+        }
+
+        // Listen for game start status and redirect all players
+        if (roomData.status === 'started') {
+            window.location.href = 'character.html?roomCode=' + roomCode;
         }
 
         // Show the ready and unready buttons based on player's ready status
@@ -72,33 +80,12 @@ if (roomCode) {
             unreadyBtn.style.display = 'none'; // Hide the unready button for the host
         }
 
-        // Check if join button exists before trying to modify it
-        if (joinButton) {
-            // Disable the "Join Room" button if the room is full
-            if (Object.keys(players).length >= 4) {
-                joinButton.disabled = true;
-                joinButton.style.display = 'none'; // Hide the button if the room is full
-            } else {
-                joinButton.disabled = false;
-                joinButton.style.display = 'block'; // Show the button if the room is not full
-            }
-        }
+        // Add event listeners
+        readyBtn.addEventListener('click', handleReadyClick);
+        unreadyBtn.addEventListener('click', handleUnreadyClick);
+        leaveBtn.addEventListener('click', handleLeaveClick);
 
-        // Add event listener for "Ready" button
-        if (readyBtn.style.display === 'block') {
-            readyBtn.removeEventListener('click', handleReadyClick); // Remove any existing event listener
-            readyBtn.addEventListener('click', handleReadyClick);
-        }
-
-        // Add event listener for "Unready" button
-        if (unreadyBtn.style.display === 'block') {
-            unreadyBtn.removeEventListener('click', handleUnreadyClick); // Remove any existing event listener
-            unreadyBtn.addEventListener('click', handleUnreadyClick);
-        }
-
-        // Add event listener for "Start Game" button
         if (startGameBtn.style.display === 'block') {
-            startGameBtn.removeEventListener('click', handleStartGameClick); // Remove any existing event listener
             startGameBtn.addEventListener('click', handleStartGameClick);
         }
     });
@@ -126,6 +113,45 @@ function handleUnreadyClick() {
     });
 }
 
+// Function to handle the Leave button click
+function handleLeaveClick() {
+    const roomCode = new URLSearchParams(window.location.search).get('roomCode');
+    const userId = auth.currentUser.uid;
+    const roomRef = ref(db, 'rooms/' + roomCode + '/players/' + userId);
+
+    // Remove the player from the room
+    remove(roomRef).then(() => {
+        console.log('Player removed successfully.');
+        checkAndDeleteRoomIfEmpty(roomCode);
+    }).catch(error => {
+        console.error('Failed to leave room:', error);
+    });
+}
+
+// Function to check and delete room if empty
+function checkAndDeleteRoomIfEmpty(roomCode) {
+    const roomRef = ref(db, 'rooms/' + roomCode);
+
+    get(roomRef).then(snapshot => {
+        const roomData = snapshot.val();
+        const players = roomData.players || {};
+
+        if (Object.keys(players).length === 0) {
+            // If there are no players, delete the room
+            remove(roomRef)
+                .then(() => {
+                    console.log('Room deleted successfully.');
+                    window.location.href = 'main.html'; // Redirect to the main page after deleting the room
+                })
+                .catch(error => {
+                    console.error('Error deleting room:', error);
+                });
+        }
+    }).catch(error => {
+        console.error('Error fetching room data:', error);
+    });
+}
+
 // Function to handle the Start Game button click
 function handleStartGameClick() {
     const roomCode = new URLSearchParams(window.location.search).get('roomCode');
@@ -134,14 +160,15 @@ function handleStartGameClick() {
     get(roomRef).then(snapshot => {
         const roomData = snapshot.val();
         const players = roomData.players || {};
-
         const readyPlayers = Object.values(players).filter(player => player.ready).length;
         
         if (readyPlayers < 3) {
             alert('Not enough players ready to start the game.');
         } else {
-            // Start the game logic here
-            alert('Game started!');
+            // Mark the game as started in the database
+            update(roomRef, { status: 'started' }).catch(error => {
+                console.error('Failed to update game status:', error);
+            });
         }
     }).catch(error => {
         console.error('Error fetching room data:', error);
