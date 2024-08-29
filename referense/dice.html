@@ -20,28 +20,20 @@
     <button type="button" id="stealthRollButton">Perform Stealth Roll</button>
     <button type="button" id="perceptionRollButton">Perform Perception Roll</button>
 
-    <h2>Melee Attack Roll Result</h2>
-    <pre id="meleeAttackResult"></pre>
+    <h2>Enemy</h2>
+    <div id="enemyName"></div>
+    <div id="enemyHP"></div>
 
-    <h2>Melee Damage Roll Result</h2>
-    <pre id="meleeDamageResult"></pre>
+    <h2>Players</h2>
+    <div id="playerList"></div>
 
-    <h2>Ranged Attack Roll Result</h2>
-    <pre id="rangedAttackResult"></pre>
-
-    <h2>Ranged Damage Roll Result</h2>
-    <pre id="rangedDamageResult"></pre>
-
-    <h2>Heal Roll Result</h2>
-    <pre id="healResult"></pre>
-
-    <h2>Heal Roll Result</h2>
-    <pre id="stealthResult"></pre>
-
-    <h2>Heal Roll Result</h2>
-    <pre id="perceptionResult"></pre>
+    <!-- Victory Notification and Leave Button -->
+    <div id="victoryNotification" style="display: none;">
+        <h2>Victory!</h2>
+    </div>
+    <button id="leaveButton" style="display: none;" onclick="window.location.href = 'main.html';">Leave</button>
 
     <!-- Link to the external JavaScript file -->
-    <script type="module" src="js/dice.js"></script>
+    <script type="module" src="/js/dicetry.js"></script>
 </body>
 </html>
