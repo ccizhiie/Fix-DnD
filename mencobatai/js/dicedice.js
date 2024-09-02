@@ -22,6 +22,7 @@ const roomCode = getRoomCodeFromURL();
 const roomRef = ref(db, `rooms/${roomCode}`);
 const enemyRef = ref(db, `rooms/${roomCode}/enemy`);
 const playersRef = ref(db, `rooms/${roomCode}/players`);
+const turnRef = ref(db, `rooms/${roomCode}/turn`);
 
 let currentTurnIndex = 0;
 let turnOrder = [];
@@ -54,7 +55,7 @@ function displayHealthData() {
         if (players) {
             const playerList = document.getElementById('playerList');
             playerList.innerHTML = '';
-            turnOrder = [];
+            // turnOrder = [];
             for (const playerId in players) {
                 const player = players[playerId];
                 const character = player.characters;  // Access character data
@@ -90,38 +91,49 @@ function getRoomCodeFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('roomcode');
 }
+function updateTurnOrderInDB() {
+    set(turnRef, {
+        order: turnOrder,
+        currentIndex: currentTurnIndex
+    }).then(() => {
+        console.log('Turn order updated in DB.');
+    }).catch((error) => {
+        console.error('Failed to update turn order in DB:', error);
+    });
+}
 
 function nextTurn() {
     checkIfGameOver((isGameOver) => {
         if (isGameOver) {
             showVictoryNotification();
         } else {
-            const currentTurn = turnOrder[currentTurnIndex];
-            console.log(`Current turn: ${currentTurn}`);  // Debug logging
+            onValue(turnRef, (snapshot) => {
+                const turnData = snapshot.val();
+                if (turnData) {
+                    currentTurnIndex = turnData.currentIndex;
+                    turnOrder = turnData.order;
+                    const currentTurn = turnOrder[currentTurnIndex];
+                    console.log(`Current turn: ${currentTurn}`);  // Debug logging
 
-            if (currentTurn === 'enemy') {
-                console.log('Enemy’s turn');  // Debug logging
-                performEnemyAction();
-            } else {
-                enablePlayerActions(currentTurn);
-            }
+                    if (currentTurn === 'enemy') {
+                        console.log('Enemy’s turn');  // Debug logging
+                        performEnemyAction();
+                    } else {
+                        enablePlayerActions(currentTurn);
+                    }
 
-            currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;
-
-            // Check if we've gone through all turns
-            if (currentTurnIndex === 0) {
-                console.log('Completed one full turn cycle. Rebuilding turn order.');  // Debug logging
-                rebuildTurnOrder();  // Rebuild or reset turn order if necessary
-            }
+                    currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;
+                    updateTurnOrderInDB();
+                }
+            }, { onlyOnce: true });
         }
     });
 }
 
 function rebuildTurnOrder() {
-    // Optionally adjust or rebuild turn order here if needed
-    // This can be useful if you want to change the turn order logic or just log for debugging
     console.log('Rebuilding turn order.');
     turnOrder = insertEnemyTurns(turnOrder);
+    updateTurnOrderInDB();
 }
 
 
@@ -157,7 +169,7 @@ function performEnemyAction() {
             if (alivePlayers.length > 0) {
                 // Select the first alive player
                 const playerId = alivePlayers[0];
-                const newHP = Math.max(0, players[playerId].characters.stats.currentHP - rollDie(10)); // Randomized damage (e.g., d10)
+                const newHP = Math.max(0, players[playerId].characters.stats.currentHP - rollMultipleDice(6,2)); // Randomized damage (e.g., d10)
                 
                 update(ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats`), { currentHP: newHP }).then(() => {
                     console.log(`Enemy attacked ${players[playerId].email}, new HP: ${newHP}`);
