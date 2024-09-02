@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getDatabase, ref, onValue, update } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+import { getDatabase, ref, onValue, update, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 // Firebase configuration
@@ -55,24 +55,23 @@ function displayHealthData() {
         if (players) {
             const playerList = document.getElementById('playerList');
             playerList.innerHTML = '';
-            // turnOrder = [];
+            turnOrder = [];
             for (const playerId in players) {
                 const player = players[playerId];
-                const character = player.characters;  // Access character data
-                const stats = character.stats;  // Access stats, including currentHP
+                const character = player.characters;
+                const stats = character.stats;
                 
-                if (stats.currentHP > 0) {  // Check if player is alive
+                if (stats.currentHP > 0) {
                     const playerDiv = document.createElement('div');
-                    playerDiv.textContent = `${player.email}: HP ${stats.currentHP}`;  // Display player email and current HP
+                    playerDiv.textContent = `${player.email}: HP ${stats.currentHP}`;
                     playerList.appendChild(playerDiv);
                     turnOrder.push(playerId);
                 }
             }
-            // Add enemy turns in between players
             turnOrder = insertEnemyTurns(turnOrder);
+            console.log('Initial Turn Order:', turnOrder);  // Debugging line
         }
     });
-    
 }
 
 // Add enemy turns after every player's turn
@@ -80,19 +79,35 @@ function insertEnemyTurns(order) {
     const extendedOrder = [];
     for (let i = 0; i < order.length; i++) {
         extendedOrder.push(order[i]);
-        extendedOrder.push('enemy');  // Insert enemy turn after each player
+        extendedOrder.push('enemy');  
     }
+    console.log('Extended Turn Order:', extendedOrder);  // Debugging line
     return extendedOrder;
 }
 
+// Initialize the turn order and save to Firebase
+function initializeTurnOrder() {
+    get(playersRef).then((snapshot) => {
+        const players = snapshot.val() || {};
+        let playerIds = Object.keys(players);
+
+        turnOrder = insertEnemyTurns(playerIds);
+        currentTurnIndex = 0;  // Start with the first turn
+
+        updateTurnOrderInDB();
+    }).catch((error) => {
+        console.error('Error initializing turn order:', error);
+    });
+}
 
 // Get the room code from the URL
 function getRoomCodeFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('roomcode');
 }
+
 function updateTurnOrderInDB() {
-    set(turnRef, {
+    update(turnRef, {
         order: turnOrder,
         currentIndex: currentTurnIndex
     }).then(() => {
@@ -113,10 +128,10 @@ function nextTurn() {
                     currentTurnIndex = turnData.currentIndex;
                     turnOrder = turnData.order;
                     const currentTurn = turnOrder[currentTurnIndex];
-                    console.log(`Current turn: ${currentTurn}`);  // Debug logging
+                    console.log(`Current turn index: ${currentTurnIndex}, Turn: ${currentTurn}`);  
 
                     if (currentTurn === 'enemy') {
-                        console.log('Enemy’s turn');  // Debug logging
+                        console.log('Enemy’s turn');  
                         performEnemyAction();
                     } else {
                         enablePlayerActions(currentTurn);
@@ -136,7 +151,6 @@ function rebuildTurnOrder() {
     updateTurnOrderInDB();
 }
 
-
 // Check if the game is over (enemy HP reaches 0)
 function checkIfGameOver(callback) {
     onValue(enemyRef, (snapshot) => {
@@ -145,20 +159,17 @@ function checkIfGameOver(callback) {
             const isGameOver = enemy.stats.currentHP <= 0;
             callback(isGameOver);
         } else {
-            callback(false);  // No enemy data found, game is not over
+            callback(false);  
         }
     });
 }
 
-
-
 // Show victory notification
 function showVictoryNotification() {
-    console.log('Victory condition met');  // Debug logging
+    console.log('Victory condition met');  
     document.getElementById('victoryNotification').style.display = 'block';
     document.getElementById('leaveButton').style.display = 'inline';
 }
-
 
 // Perform enemy action (attack a player)
 function performEnemyAction() {
@@ -167,19 +178,31 @@ function performEnemyAction() {
         if (players) {
             const alivePlayers = Object.keys(players).filter(playerId => players[playerId].characters.stats.currentHP > 0);
             if (alivePlayers.length > 0) {
-                // Select the first alive player
                 const playerId = alivePlayers[0];
-                const newHP = Math.max(0, players[playerId].characters.stats.currentHP - rollMultipleDice(6,2)); // Randomized damage (e.g., d10)
+                const newHP = Math.max(0, players[playerId].characters.stats.currentHP - rollMultipleDice(6, 2));
                 
                 update(ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats`), { currentHP: newHP }).then(() => {
                     console.log(`Enemy attacked ${players[playerId].email}, new HP: ${newHP}`);
-                    nextTurn();  // Proceed to the next turn
+                    nextTurn();
                 });
             }
         }
     }, { onlyOnce: true });
 }
 
+// Update enemy HP after player attack
+function updateEnemyHP(damage) {
+    onValue(enemyRef, (snapshot) => {
+        const enemy = snapshot.val();
+        if (enemy) {
+            const newHP = Math.max(0, enemy.stats.currentHP - damage);  
+            update(ref(db, `rooms/${roomCode}/enemy/stats`), { currentHP: newHP }).then(() => {
+                console.log(`Player dealt ${damage} damage to the enemy, new HP: ${newHP}`);
+                nextTurn();  
+            });
+        }
+    }, { onlyOnce: true });
+}
 
 // Enable player actions
 function enablePlayerActions(playerId) {
@@ -188,54 +211,42 @@ function enablePlayerActions(playerId) {
     if (userId === playerId) {
         document.getElementById('attackButton').disabled = false;
         document.getElementById('rangedAttackButton').disabled = false;
+        console.log('Player actions enabled for:', playerId);
+    } else {
+        document.getElementById('attackButton').disabled = true;
+        document.getElementById('rangedAttackButton').disabled = true;
+        console.log('Player actions disabled for:', playerId);
     }
 }
 
 // Handle player attack (melee)
 document.getElementById('meleeAttackRollButton').addEventListener('click', () => {
     document.getElementById('meleeAttackRollButton').disabled = true;
-    const attackRoll = rollDie(20); // d20 roll for attack
+    const attackRoll = rollDie(20);
 
-    // Assume AC 15 for the enemy
     if (attackRoll >= 10) {
-        // Successful attack, proceed to damage roll
-        const damageRoll = rollMultipleDice(6, 2); // Example: 2d6 for a greatsword
+        const damageRoll = rollMultipleDice(6, 2);
         updateEnemyHP(damageRoll);
     } else {
         console.log('Melee attack missed!');
-        nextTurn();  // Missed attack, proceed to the next turn
+        nextTurn();
     }
 });
 
 // Handle player ranged attack
 document.getElementById('rangedAttackRollButton').addEventListener('click', () => {
     document.getElementById('rangedAttackRollButton').disabled = true;
-    const attackRoll = rollDie(20); // d20 roll for attack
+    const attackRoll = rollDie(20);
 
     if (attackRoll >= 10) {
-        // Successful attack
-        const damageRoll = rollMultipleDice(8, 1); // Example: 1d8 for a bow
+        const damageRoll = rollMultipleDice(8, 1);
         updateEnemyHP(damageRoll);
     } else {
         console.log('Ranged attack missed!');
-        nextTurn();  // Missed attack, proceed to the next turn
+        nextTurn();
     }
 });
 
-// Update enemy HP after player attack
-function updateEnemyHP(damage) {
-    onValue(enemyRef, (snapshot) => {
-        const enemy = snapshot.val();
-        if (enemy) {
-            const newHP = Math.max(0, enemy.stats.currentHP - damage);  // Apply damage
-            update(ref(db, `rooms/${roomCode}/enemy/stats`), { currentHP: newHP }).then(() => {
-                console.log(`Player dealt ${damage} damage to the enemy, new HP: ${newHP}`);
-                nextTurn();  // Proceed to the next turn
-            });
-        }
-    }, { onlyOnce: true });
-}
-
 // Initialize the game
 displayHealthData();
-nextTurn();
+initializeTurnOrder();
