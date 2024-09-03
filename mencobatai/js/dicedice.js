@@ -92,7 +92,7 @@ function initializeTurnOrder() {
         let playerIds = Object.keys(players);
 
         turnOrder = insertEnemyTurns(playerIds);
-        currentTurnIndex = 0;  // Start with the first turn
+        currentTurnIndex = 0;  // Ensure starting index is set to 0
 
         updateTurnOrderInDB();
     }).catch((error) => {
@@ -106,7 +106,9 @@ function getRoomCodeFromURL() {
     return urlParams.get('roomcode');
 }
 
+// Update turn order and current index in the database
 function updateTurnOrderInDB() {
+    console.log('Updating turn order in DB:', { order: turnOrder, currentIndex: currentTurnIndex });
     update(turnRef, {
         order: turnOrder,
         currentIndex: currentTurnIndex
@@ -117,6 +119,7 @@ function updateTurnOrderInDB() {
     });
 }
 
+// Handle the next turn
 function nextTurn() {
     checkIfGameOver((isGameOver) => {
         if (isGameOver) {
@@ -125,19 +128,31 @@ function nextTurn() {
             onValue(turnRef, (snapshot) => {
                 const turnData = snapshot.val();
                 if (turnData) {
-                    currentTurnIndex = turnData.currentIndex;
                     turnOrder = turnData.order;
-                    const currentTurn = turnOrder[currentTurnIndex];
-                    console.log(`Current turn index: ${currentTurnIndex}, Turn: ${currentTurn}`);  
+                    currentTurnIndex = turnData.currentIndex;
 
-                    if (currentTurn === 'enemy') {
-                        console.log('Enemy’s turn');  
-                        performEnemyAction();
-                    } else {
-                        enablePlayerActions(currentTurn);
+                    // Loop until a valid player or enemy is found
+                    let validTurnFound = false;
+                    while (!validTurnFound) {
+                        currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;
+                        const currentTurn = turnOrder[currentTurnIndex];
+
+                        if (currentTurn === 'enemy') {
+                            console.log('Enemy’s turn');
+                            performEnemyAction();
+                            validTurnFound = true; // Exit the loop as we have found the enemy’s turn
+                        } else {
+                            // Check if the player is alive
+                            isPlayerDead(currentTurn).then(isDead => {
+                                if (!isDead) {
+                                    enablePlayerActions(currentTurn);
+                                    validTurnFound = true; // Exit the loop as we have found a valid player
+                                }
+                            });
+                        }
                     }
 
-                    currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;
+                    // Update turn order index in the database
                     updateTurnOrderInDB();
                 }
             }, { onlyOnce: true });
@@ -145,11 +160,25 @@ function nextTurn() {
     });
 }
 
+
+// Check if a player is dead
+async function isPlayerDead(playerId) {
+    return new Promise((resolve) => {
+        onValue(ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats/currentHP`), (snapshot) => {
+            const hp = snapshot.val();
+            resolve(hp <= 0);
+        }, { onlyOnce: true });
+    });
+}
+
+// Rebuild turn order if needed
 function rebuildTurnOrder() {
     console.log('Rebuilding turn order.');
     turnOrder = insertEnemyTurns(turnOrder);
+    currentTurnIndex = 0; // Reset to the start
     updateTurnOrderInDB();
 }
+
 
 // Check if the game is over (enemy HP reaches 0)
 function checkIfGameOver(callback) {
@@ -171,25 +200,6 @@ function showVictoryNotification() {
     document.getElementById('leaveButton').style.display = 'inline';
 }
 
-// Perform enemy action (attack a player)
-function performEnemyAction() {
-    onValue(playersRef, (snapshot) => {
-        const players = snapshot.val();
-        if (players) {
-            const alivePlayers = Object.keys(players).filter(playerId => players[playerId].characters.stats.currentHP > 0);
-            if (alivePlayers.length > 0) {
-                const playerId = alivePlayers[0];
-                const newHP = Math.max(0, players[playerId].characters.stats.currentHP - rollMultipleDice(6, 2));
-                
-                update(ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats`), { currentHP: newHP }).then(() => {
-                    console.log(`Enemy attacked ${players[playerId].email}, new HP: ${newHP}`);
-                    nextTurn();
-                });
-            }
-        }
-    }, { onlyOnce: true });
-}
-
 // Update enemy HP after player attack
 function updateEnemyHP(damage) {
     onValue(enemyRef, (snapshot) => {
@@ -204,27 +214,45 @@ function updateEnemyHP(damage) {
     }, { onlyOnce: true });
 }
 
-// Enable player actions
-function enablePlayerActions(playerId) {
-    const userId = auth.currentUser.uid;
-
-    if (userId === playerId) {
-        document.getElementById('attackButton').disabled = false;
-        document.getElementById('rangedAttackButton').disabled = false;
-        console.log('Player actions enabled for:', playerId);
-    } else {
-        document.getElementById('attackButton').disabled = true;
-        document.getElementById('rangedAttackButton').disabled = true;
-        console.log('Player actions disabled for:', playerId);
-    }
+// Perform enemy action (attack a player)
+function performEnemyAction() {
+    onValue(playersRef, (snapshot) => {
+        const players = snapshot.val();
+        if (players) {
+            const alivePlayers = Object.keys(players).filter(playerId => players[playerId].characters.stats.currentHP > 0);
+            if (alivePlayers.length > 0) {
+                const playerId = alivePlayers[0];
+                const damage = 3; // Set fixed damage value for testing
+                const newHP = Math.max(0, players[playerId].characters.stats.currentHP - damage);
+                
+                update(ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats`), { currentHP: newHP }).then(() => {
+                    console.log(`Enemy attacked ${players[playerId].email}, dealt ${damage} damage, new HP: ${newHP}`);
+                    
+                    // After the enemy's turn, go to the next turn
+                    currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;  // Advance the turn index
+                    updateTurnOrderInDB();
+                }).catch(error => {
+                    console.error('Error updating player HP:', error);
+                });
+            } else {
+                // No alive players found, check if the game is over
+                checkIfGameOver(isGameOver => {
+                    if (isGameOver) {
+                        showVictoryNotification();
+                    }
+                });
+            }
+        }
+    }, { onlyOnce: true });
 }
+
 
 // Handle player attack (melee)
 document.getElementById('meleeAttackRollButton').addEventListener('click', () => {
     document.getElementById('meleeAttackRollButton').disabled = true;
     const attackRoll = rollDie(20);
 
-    if (attackRoll >= 10) {
+    if (attackRoll >= 3) {
         const damageRoll = rollMultipleDice(6, 2);
         updateEnemyHP(damageRoll);
     } else {
@@ -238,7 +266,7 @@ document.getElementById('rangedAttackRollButton').addEventListener('click', () =
     document.getElementById('rangedAttackRollButton').disabled = true;
     const attackRoll = rollDie(20);
 
-    if (attackRoll >= 10) {
+    if (attackRoll >= 3) {
         const damageRoll = rollMultipleDice(8, 1);
         updateEnemyHP(damageRoll);
     } else {
@@ -246,6 +274,24 @@ document.getElementById('rangedAttackRollButton').addEventListener('click', () =
         nextTurn();
     }
 });
+
+// // Function to handle the Leave button click
+// function handleLeaveClick() {
+// }
+
+// document.getElementById('leaveButton').addEventListener('click', () => {
+//     const roomCode = new URLSearchParams(window.location.search).get('roomCode');
+//     const userId = auth.currentUser.uid;
+//     const roomRef = ref(db, 'rooms/' + roomCode + '/players/' + userId);
+
+//     // Remove the player from the room
+//     remove(roomRef).then(() => {
+//         console.log('Player removed successfully.');
+//         checkAndDeleteRoomIfEmpty(roomCode);
+//     }).catch(error => {
+//         console.error('Failed to leave room:', error);
+//     });
+// })
 
 // Initialize the game
 displayHealthData();
