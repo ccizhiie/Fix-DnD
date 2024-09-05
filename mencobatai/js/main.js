@@ -103,25 +103,34 @@ function joinRoom(roomCode) {
 }
 
 function joinRandomRoom() {
+    // Query for rooms with status 'waiting'
     const roomsRef = query(ref(db, 'rooms'), orderByChild('status'), equalTo('waiting'));
     
     get(roomsRef).then(snapshot => {
-        const availableRooms = [];
-        snapshot.forEach(roomSnapshot => {
-            const roomData = roomSnapshot.val();
-            const players = roomData.players || {};
+        if (snapshot.exists()) {
+            const availableRooms = [];
 
-            // Check if the room has less than 4 players
-            if (Object.keys(players).length < 4) {
-                availableRooms.push(roomSnapshot.key);
+            snapshot.forEach(roomSnapshot => {
+                const roomData = roomSnapshot.val();
+                const players = roomData.players || {};
+
+                // Check if the room has less than 4 players
+                if (Object.keys(players).length < 4) {
+                    availableRooms.push(roomSnapshot.key);
+                }
+            });
+
+            if (availableRooms.length > 0) {
+                // Join the first available room
+                const roomCode = availableRooms[0];
+                console.log(`Joining room: ${roomCode}`); // Debugging line
+                joinRoom(roomCode);
+            } else {
+                console.warn('No available rooms with slots found in snapshot.');
+                alert('No available rooms with slots.');
             }
-        });
-
-        if (availableRooms.length > 0) {
-            // Join the first available room
-            const roomCode = availableRooms[0];
-            joinRoom(roomCode);
         } else {
+            console.error('No rooms found with status "waiting".');
             alert('No available rooms with slots.');
         }
     }).catch(error => {
@@ -129,6 +138,7 @@ function joinRandomRoom() {
         alert('Error finding available rooms.');
     });
 }
+
 
 function storeEnemyData(roomCode) {
     const enemyRef = ref(db, `rooms/${roomCode}/enemy`);

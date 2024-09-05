@@ -61,10 +61,17 @@ function displayHealthData() {
                 const character = player.characters;
                 const stats = character.stats;
                 
-                if (stats.currentHP > 0) {
-                    const playerDiv = document.createElement('div');
-                    playerDiv.textContent = `${player.email}: HP ${stats.currentHP}`;
-                    playerList.appendChild(playerDiv);
+                // Check if the player is alive
+                const isAlive = stats.currentHP > 0;
+                const status = isAlive ? "Alive" : "Dead";
+
+                // Create a player display element
+                const playerDiv = document.createElement('div');
+                playerDiv.textContent = `${player.email}: HP ${stats.currentHP} (${status})`;
+                playerList.appendChild(playerDiv);
+
+                // Add alive players to the turn order
+                if (isAlive) {
                     turnOrder.push(playerId);
                 }
             }
@@ -100,6 +107,35 @@ function initializeTurnOrder() {
     });
 }
 
+// Disable or enable action buttons based on player status
+function validatePlayerActions(playerId) {
+    isPlayerDead(playerId).then(isDead => {
+        const meleeButton = document.getElementById('meleeAttackRollButton');
+        const rangedButton = document.getElementById('rangedAttackRollButton');
+
+        if (isDead) {
+            // Disable buttons if the player is dead
+            meleeButton.disabled = true;
+            rangedButton.disabled = true;
+        } else {
+            // Enable buttons if the player is alive
+            meleeButton.disabled = false;
+            rangedButton.disabled = false;
+        }
+    });
+}
+
+// Ensure buttons are reset at the beginning of each turn
+function enablePlayerActions(playerId) {
+    const meleeButton = document.getElementById('meleeAttackRollButton');
+    const rangedButton = document.getElementById('rangedAttackRollButton');
+
+    meleeButton.disabled = false;
+    rangedButton.disabled = false;
+
+    validatePlayerActions(playerId);  // Check if the player is dead or alive and adjust buttons
+}
+
 // Get the room code from the URL
 function getRoomCodeFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -131,22 +167,31 @@ function nextTurn() {
                     turnOrder = turnData.order;
                     currentTurnIndex = turnData.currentIndex;
 
-                    // Loop until a valid player or enemy is found
                     let validTurnFound = false;
                     while (!validTurnFound) {
+                        // Increment the turn index and wrap around if necessary
                         currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;
+                        
+                        // Reset index if it goes out of bounds
+                        if (currentTurnIndex >= turnOrder.length) {
+                            currentTurnIndex = 0;
+                        }
+                        
                         const currentTurn = turnOrder[currentTurnIndex];
 
                         if (currentTurn === 'enemy') {
                             console.log('Enemy’s turn');
                             performEnemyAction();
-                            validTurnFound = true; // Exit the loop as we have found the enemy’s turn
+                            validTurnFound = true;
                         } else {
                             // Check if the player is alive
                             isPlayerDead(currentTurn).then(isDead => {
                                 if (!isDead) {
                                     enablePlayerActions(currentTurn);
-                                    validTurnFound = true; // Exit the loop as we have found a valid player
+                                    validatePlayerActions(currentTurn);  // Validate button states
+                                    validTurnFound = true;
+                                } else {
+                                    validatePlayerActions(currentTurn);  // Disable buttons for dead players
                                 }
                             });
                         }
@@ -159,6 +204,7 @@ function nextTurn() {
         }
     });
 }
+
 
 
 // Check if a player is dead
@@ -222,7 +268,7 @@ function performEnemyAction() {
             const alivePlayers = Object.keys(players).filter(playerId => players[playerId].characters.stats.currentHP > 0);
             if (alivePlayers.length > 0) {
                 const playerId = alivePlayers[0];
-                const damage = 3; // Set fixed damage value for testing
+                const damage = 7; // Set fixed damage value for testing
                 const newHP = Math.max(0, players[playerId].characters.stats.currentHP - damage);
                 
                 update(ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats`), { currentHP: newHP }).then(() => {
@@ -252,7 +298,7 @@ document.getElementById('meleeAttackRollButton').addEventListener('click', () =>
     document.getElementById('meleeAttackRollButton').disabled = true;
     const attackRoll = rollDie(20);
 
-    if (attackRoll >= 3) {
+    if (attackRoll >= 10) {
         const damageRoll = rollMultipleDice(6, 2);
         updateEnemyHP(damageRoll);
     } else {
@@ -266,7 +312,7 @@ document.getElementById('rangedAttackRollButton').addEventListener('click', () =
     document.getElementById('rangedAttackRollButton').disabled = true;
     const attackRoll = rollDie(20);
 
-    if (attackRoll >= 3) {
+    if (attackRoll >= 10) {
         const damageRoll = rollMultipleDice(8, 1);
         updateEnemyHP(damageRoll);
     } else {
