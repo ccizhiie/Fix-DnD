@@ -26,6 +26,7 @@ const turnRef = ref(db, `rooms/${roomCode}/turn`);
 
 let currentTurnIndex = 0;
 let turnOrder = [];
+let deadPlayers = []; // New list to track dead players
 
 // Dice rolling functions
 function rollDie(sides) {
@@ -55,13 +56,14 @@ function displayHealthData() {
         if (players) {
             const playerList = document.getElementById('playerList');
             playerList.innerHTML = '';
-            turnOrder = [];
+            turnOrder = []; // Reset the turnOrder array
+            deadPlayers = []; // Reset the deadPlayers list
+
             for (const playerId in players) {
                 const player = players[playerId];
                 const character = player.characters;
                 const stats = character.stats;
                 
-                // Check if the player is alive
                 const isAlive = stats.currentHP > 0;
                 const status = isAlive ? "Alive" : "Dead";
 
@@ -70,13 +72,17 @@ function displayHealthData() {
                 playerDiv.textContent = `${player.email}: HP ${stats.currentHP} (${status})`;
                 playerList.appendChild(playerDiv);
 
-                // Add alive players to the turn order
-                if (isAlive) {
+                // Add player to deadPlayers list if dead
+                if (!isAlive) {
+                    deadPlayers.push(playerId);
+                } else {
                     turnOrder.push(playerId);
                 }
             }
+            
+            // Insert enemy turns after each player's turn
             turnOrder = insertEnemyTurns(turnOrder);
-            console.log('Initial Turn Order:', turnOrder);  // Debugging line
+            console.log('Initial Turn Order:', turnOrder); // Debugging line
         }
     });
 }
@@ -101,7 +107,16 @@ function initializeTurnOrder() {
         turnOrder = insertEnemyTurns(playerIds);
         currentTurnIndex = 0;  // Ensure starting index is set to 0
 
-        updateTurnOrderInDB();
+        // Initialize deadPlayers list as empty
+        update(turnRef, {
+            order: turnOrder,
+            currentIndex: currentTurnIndex,
+            deadPlayers: {}
+        }).then(() => {
+            console.log('Turn order and deadPlayers list initialized.');
+        }).catch((error) => {
+            console.error('Error initializing turn order:', error);
+        });
     }).catch((error) => {
         console.error('Error initializing turn order:', error);
     });
@@ -109,20 +124,18 @@ function initializeTurnOrder() {
 
 // Disable or enable action buttons based on player status
 function validatePlayerActions(playerId) {
-    isPlayerDead(playerId).then(isDead => {
-        const meleeButton = document.getElementById('meleeAttackRollButton');
-        const rangedButton = document.getElementById('rangedAttackRollButton');
+    const meleeButton = document.getElementById('meleeAttackRollButton');
+    const rangedButton = document.getElementById('rangedAttackRollButton');
 
-        if (isDead) {
-            // Disable buttons if the player is dead
-            meleeButton.disabled = true;
-            rangedButton.disabled = true;
-        } else {
-            // Enable buttons if the player is alive
-            meleeButton.disabled = false;
-            rangedButton.disabled = false;
-        }
-    });
+    if (deadPlayers.includes(playerId)) {
+        // Disable buttons if the player is dead
+        meleeButton.disabled = true;
+        rangedButton.disabled = true;
+    } else {
+        // Enable buttons if the player is alive
+        meleeButton.disabled = false;
+        rangedButton.disabled = false;
+    }
 }
 
 // Ensure buttons are reset at the beginning of each turn
@@ -134,6 +147,48 @@ function enablePlayerActions(playerId) {
     rangedButton.disabled = false;
 
     validatePlayerActions(playerId);  // Check if the player is dead or alive and adjust buttons
+}
+
+// Handle saving throw for a dead player
+function handleSavingThrow(playerId) {
+    const savingThrowRoll = rollDie(20);
+    
+    if (savingThrowRoll >= 10) {
+        // Success, revive the player
+        console.log(`Player ${playerId} succeeded the saving throw with a roll of ${savingThrowRoll}.`);
+        
+        // Retrieve the dead player from the database
+        get(ref(db, `rooms/${roomCode}/turn/deadPlayers/${playerId}`)).then((snapshot) => {
+            const deadPlayer = snapshot.val();
+            if (deadPlayer) {
+                // Restore the player's turn to the turnOrder
+                const turnOrderRef = ref(db, `rooms/${roomCode}/turn/turnOrder`);
+                get(turnOrderRef).then((turnOrderSnapshot) => {
+                    const turnOrder = turnOrderSnapshot.val() || [];
+                    const revivedIndex = turnOrder.indexOf('enemy') + 1;
+
+                    if (revivedIndex > -1) {
+                        // Restore player's turn and the enemy turn after them
+                        turnOrder.splice(revivedIndex, 0, playerId, 'enemy');
+                        update(turnOrderRef, turnOrder);
+                        
+                        // Remove the player from the deadPlayers list
+                        update(ref(db, `rooms/${roomCode}/turn/deadPlayers/${playerId}`), null).then(() => {
+                            console.log(`Player ${playerId} revived and their turn restored.`);
+                        }).catch(error => {
+                            console.error('Error removing player from deadPlayers:', error);
+                        });
+                    }
+                }).catch(error => {
+                    console.error('Error retrieving turnOrder:', error);
+                });
+            }
+        }).catch(error => {
+            console.error('Error retrieving deadPlayer:', error);
+        });
+    } else {
+        console.log(`Player ${playerId} failed the saving throw with a roll of ${savingThrowRoll}.`);
+    }
 }
 
 // Get the room code from the URL
@@ -167,53 +222,76 @@ function nextTurn() {
                     turnOrder = turnData.order;
                     currentTurnIndex = turnData.currentIndex;
 
-                    let validTurnFound = false;
-                    while (!validTurnFound) {
-                        // Increment the turn index and wrap around if necessary
-                        currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;
-                        
-                        // Reset index if it goes out of bounds
-                        if (currentTurnIndex >= turnOrder.length) {
-                            currentTurnIndex = 0;
-                        }
-                        
-                        const currentTurn = turnOrder[currentTurnIndex];
+                    // Function to find the next valid turn
+                    const findNextValidTurn = () => {
+                        const nextIndex = (currentTurnIndex + 1) % turnOrder.length;
+                        const currentTurn = turnOrder[nextIndex];
 
                         if (currentTurn === 'enemy') {
                             console.log('Enemy’s turn');
                             performEnemyAction();
-                            validTurnFound = true;
+                            currentTurnIndex = nextIndex; // Update index after enemy's turn
+                            updateTurnOrderInDB();
                         } else {
-                            // Check if the player is alive
-                            isPlayerDead(currentTurn).then(isDead => {
-                                if (!isDead) {
-                                    enablePlayerActions(currentTurn);
-                                    validatePlayerActions(currentTurn);  // Validate button states
-                                    validTurnFound = true;
+                            // Check if the player is in the deadPlayers list
+                            onValue(ref(db, `rooms/${roomCode}/turn/deadPlayers`), (deadPlayersSnapshot) => {
+                                const deadPlayers = deadPlayersSnapshot.val() || {};
+                                if (deadPlayers[currentTurn]) {
+                                    console.log(`Player ${currentTurn} is dead, processing saving throw...`);
+                                    // Handle saving throw
+                                    handleSavingThrow(currentTurn).then(success => {
+                                        if (success) {
+                                            console.log(`Player ${currentTurn} revived!`);
+                                            // Restore player's turn and the next enemy turn
+                                            restorePlayerTurn(currentTurn, nextIndex);
+                                        } else {
+                                            console.log(`Player ${currentTurn} failed saving throw, skipping turn...`);
+                                            currentTurnIndex = nextIndex; // Move to the next index
+                                            // Recursively find the next valid turn
+                                            if (currentTurnIndex !== 0 || turnOrder[currentTurnIndex] === 'enemy') {
+                                                findNextValidTurn();
+                                            } else {
+                                                console.log('Reached end of turn order, resetting...');
+                                                currentTurnIndex = 0; // Reset to start, but continue finding a valid turn
+                                                findNextValidTurn();
+                                            }
+                                        }
+                                    });
                                 } else {
-                                    validatePlayerActions(currentTurn);  // Disable buttons for dead players
+                                    // Player is not in deadPlayers list, check their HP
+                                    const playerHPRef = ref(db, `rooms/${roomCode}/players/${currentTurn}/characters/stats/currentHP`);
+                                    onValue(playerHPRef, (hpSnapshot) => {
+                                        const currentHP = hpSnapshot.val();
+                                        if (currentHP > 0) {
+                                            // Player is alive, enable their actions
+                                            enablePlayerActions(currentTurn);
+                                            validatePlayerActions(currentTurn);
+                                            currentTurnIndex = nextIndex; // Update index after a valid turn is found
+                                            updateTurnOrderInDB();
+                                        } else {
+                                            // Player is dead, skip their turn
+                                            console.log(`Player ${currentTurn} is dead, skipping to the next turn...`);
+                                            currentTurnIndex = nextIndex; // Move to the next index
+                                            // Recursively find the next valid turn
+                                            if (currentTurnIndex !== 0 || turnOrder[currentTurnIndex] === 'enemy') {
+                                                findNextValidTurn();
+                                            } else {
+                                                console.log('Reached end of turn order, resetting...');
+                                                currentTurnIndex = 0; // Reset to start, but continue finding a valid turn
+                                                findNextValidTurn();
+                                            }
+                                        }
+                                    }, { onlyOnce: true });
                                 }
-                            });
+                            }, { onlyOnce: true });
                         }
-                    }
+                    };
 
-                    // Update turn order index in the database
-                    updateTurnOrderInDB();
+                    // Start finding the next valid turn
+                    findNextValidTurn();
                 }
             }, { onlyOnce: true });
         }
-    });
-}
-
-
-
-// Check if a player is dead
-async function isPlayerDead(playerId) {
-    return new Promise((resolve) => {
-        onValue(ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats/currentHP`), (snapshot) => {
-            const hp = snapshot.val();
-            resolve(hp <= 0);
-        }, { onlyOnce: true });
     });
 }
 
@@ -224,7 +302,6 @@ function rebuildTurnOrder() {
     currentTurnIndex = 0; // Reset to the start
     updateTurnOrderInDB();
 }
-
 
 // Check if the game is over (enemy HP reaches 0)
 function checkIfGameOver(callback) {
@@ -292,6 +369,22 @@ function performEnemyAction() {
     }, { onlyOnce: true });
 }
 
+function restorePlayerTurn(playerId, nextIndex) {
+    // Add the player back to the turn order
+    turnOrder.splice(nextIndex, 0, playerId);
+
+    // Also need to restore the next enemy turn
+    turnOrder.splice(nextIndex + 1, 0, 'enemy');
+
+    // Remove from deadPlayers
+    const deadPlayersRef = ref(db, `rooms/${roomCode}/turn/deadPlayers`);
+    update(deadPlayersRef, { [playerId]: null }).then(() => {
+        console.log(`Removed player ${playerId} from deadPlayers list.`);
+        updateTurnOrderInDB();
+    }).catch((error) => {
+        console.error('Failed to update deadPlayers list:', error);
+    });
+}
 
 // Handle player attack (melee)
 document.getElementById('meleeAttackRollButton').addEventListener('click', () => {
@@ -320,24 +413,6 @@ document.getElementById('rangedAttackRollButton').addEventListener('click', () =
         nextTurn();
     }
 });
-
-// // Function to handle the Leave button click
-// function handleLeaveClick() {
-// }
-
-// document.getElementById('leaveButton').addEventListener('click', () => {
-//     const roomCode = new URLSearchParams(window.location.search).get('roomCode');
-//     const userId = auth.currentUser.uid;
-//     const roomRef = ref(db, 'rooms/' + roomCode + '/players/' + userId);
-
-//     // Remove the player from the room
-//     remove(roomRef).then(() => {
-//         console.log('Player removed successfully.');
-//         checkAndDeleteRoomIfEmpty(roomCode);
-//     }).catch(error => {
-//         console.error('Failed to leave room:', error);
-//     });
-// })
 
 // Initialize the game
 displayHealthData();
