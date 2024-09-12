@@ -9,12 +9,12 @@
 <body>
   <div class="char-container">
     <div class="modal-char" id="modal-char">
-      <img src="../assets/char.png" alt="Modal Image" class="loby-modal-image">
+      <img src="../assets/char.png" alt="Modal Image" class="char-modal-image">
 
       <div class="content">
         <div class="field-container">
           <label for="cName">Character Name:</label>
-          <input type="text" id="cName">
+          <input2 type="text" id="cName">
         </div>
 
         <div class="field-container">
@@ -36,6 +36,7 @@
             <option value="half-elf">Half-Elf</option>
           </select>
         </div>
+
         <div class="field-container">
           <label for="cLevel">Level</label>
           <input type="number" id="cLevel" min="1" max="20">
@@ -43,8 +44,8 @@
       </div>
 
     </div>
-    <a href="#" class="go-button" id="go-btn"></a>
-    
+    <a href="game.html" class="go-button" id="go-btn"></a>
+
     <script type="module" src="js/generate.js"></script>
   </div>
 </body>

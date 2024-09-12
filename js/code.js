@@ -32,10 +32,9 @@ function joinRoom(roomCode) {
     get(roomRef).then(snapshot => {
         if (snapshot.exists()) {
             const roomData = snapshot.val();
-            const players = roomData.players || {};  // Use existing players or start with an empty object
+            const players = roomData.players || {};
 
-            if (Object.keys(players).length < 4) { // Check if the room has fewer than 4 players
-                // Add the new player to the players object
+            if (Object.keys(players).length < 4) { 
                 players[userId] = {
                     email: userEmail,
                     ready: false

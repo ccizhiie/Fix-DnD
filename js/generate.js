@@ -63,7 +63,7 @@ function getRoomCodeFromURL() {
 // Function to generate and store character
 function generateCharacter() {
     const roomCode = getRoomCodeFromURL();
-    
+
     if (!roomCode) {
         console.error('Room code is missing or invalid.');
         return;
