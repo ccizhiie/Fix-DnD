@@ -31,7 +31,7 @@ const roomRef = ref(db, `rooms/${roomCode}`);
 const enemyRef = ref(db, `rooms/${roomCode}/enemy`);
 const playersRef = ref(db, `rooms/${roomCode}/players`);
 const turnRef = ref(db, `rooms/${roomCode}/turn`);
-
+let currentUID = "";
 let currentTurnIndex = 0;
 let turnOrder = [];
 
@@ -157,12 +157,23 @@ function validatePlayerActions(playerId) {
   );
 }
 
-function enablePlayerAction() {
-  document.getElementById("meleeAttackRollButton").disabled = true;
-  document.getElementById("rangedAttackRollButton").disabled = true;
-  document.getElementById("healRollButton").disabled = true;
-  document.getElementById("stealthRollButton").disabled = true;
-  document.getElementById("perceptionRollButton").disabled = true;
+function enablePlayerAction(playerId) {
+  console.log(currentUID);
+  if (currentUID == auth.currentUser.uid) {
+    document.getElementById("meleeAttackRollButton").disabled = false;
+    document.getElementById("rangedAttackRollButton").disabled = false;
+    document.getElementById("healRollButton").disabled = false;
+    document.getElementById("stealthRollButton").disabled = false;
+    document.getElementById("perceptionRollButton").disabled = false;
+  } else {
+    document.getElementById("meleeAttackRollButton").disabled = true;
+    document.getElementById("rangedAttackRollButton").disabled = true;
+    document.getElementById("healRollButton").disabled = true;
+    document.getElementById("stealthRollButton").disabled = true;
+    document.getElementById("perceptionRollButton").disabled = true;
+  }
+
+  validatePlayerActions(playerId); // Check if the player is dead or alive and adjust buttons
 }
 
 // Ensure buttons are reset at the beginning of each turn
@@ -172,6 +183,9 @@ function enablePlayerActions(playerId) {
 
   document.getElementById("meleeAttackRollButton").disabled = true;
   document.getElementById("rangedAttackRollButton").disabled = true;
+  document.getElementById("healRollButton").disabled = true;
+  document.getElementById("stealthRollButton").disabled = true;
+  document.getElementById("perceptionRollButton").disabled = true;
 
   validatePlayerActions(playerId); // Check if the player is dead or alive and adjust buttons
 }
@@ -244,7 +258,8 @@ const getPlayerNow = async () => {
       if (turnData) {
         turnOrder = turnData.order;
         currentTurnIndex = turnData.currentIndex;
-        return turnOrder[currentTurnIndex];
+        currentUID = turnOrder[currentTurnIndex];
+        enablePlayerAction();
       }
     },
     { onlyOnce: true }
@@ -302,7 +317,7 @@ function nextTurnFunc() {
                   if (currentHP > 0) {
                     // Player is alive, enable their actions
                     console.log(`Player ${nextTurn}'s turn. HP: ${currentHP}`);
-                    enablePlayerActions(nextTurn);
+                    enablePlayerAction(nextTurn);
                     // validatePlayerActions(nextTurn);
                   } else {
                     // Player is dead, check if they can perform a saving throw
@@ -476,9 +491,9 @@ document
 
 // Initialize and display health data when the page loads
 document.addEventListener("DOMContentLoaded", () => {
+  getPlayerNow();
   displayHealthData();
   initializeTurnOrder();
-  enablePlayerAction();
 
   // Event listener for saving throw button
   document.getElementById("savingThrowButton").addEventListener("click", () => {
@@ -487,6 +502,4 @@ document.addEventListener("DOMContentLoaded", () => {
       handleSavingThrow(playerId);
     }
   });
-
-  console.log(getPlayerNow());
 });
