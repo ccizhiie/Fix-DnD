@@ -20,7 +20,7 @@ const firebaseConfig = {
   messagingSenderId: "1010963587070",
   appId: "1:1010963587070:web:bcb761dc0cba09a52d6aaf",
   measurementId: "G-9HVXKJ3NSZ",
-};
+};  
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -79,10 +79,10 @@ function displayHealthData() {
         const playerDiv = document.createElement("div");
         playerDiv.textContent = `${player.email}: HP ${stats.currentHP} (${status})`;
         playerList.appendChild(playerDiv);
+        turnOrder.push(playerId);
 
-        if (isAlive) {
-          turnOrder.push(playerId);
-        }
+        // if (isAlive) {
+        // }
       }
 
       // Insert enemy turns after each player's turn
@@ -132,33 +132,34 @@ function initializeTurnOrder() {
 }
 
 // Disable or enable action buttons based on player status
-function validatePlayerActions(playerId) {
-  // const meleeButton = document.getElementById('meleeAttackRollButton');
-  // const rangedButton = document.getElementById('rangedAttackRollButton');
-  // const savingThrowButton = document.getElementById('savingThrowButton');
+// function validatePlayerActions(playerId) {
+//   // const meleeButton = document.getElementById('meleeAttackRollButton');
+//   // const rangedButton = document.getElementById('rangedAttackRollButton');
+//   // const savingThrowButton = document.getElementById('savingThrowButton');
 
-  onValue(
-    ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats/currentHP`),
-    (snapshot) => {
-      const currentHP = snapshot.val();
-      if (currentHP <= 0) {
-        // Disable buttons and show saving throw button if the player is dead
-        document.getElementById("meleeAttackRollButton").disabled = true;
-        document.getElementById("rangedAttackRollButton").disabled = true;
-        document.getElementById("savingThrowButton").style.display = "inline";
-      } else {
-        // Enable buttons if the player is alive
-        document.getElementById("meleeAttackRollButton").disabled = false;
-        document.getElementById("rangedAttackRollButton").disabled = false;
-        document.getElementById("savingThrowButton").style.display = "none";
-      }
-    },
-    { onlyOnce: true }
-  );
-}
+//   onValue(
+//     ref(db, `rooms/${roomCode}/players/${playerId}/characters/stats/currentHP`),
+//     (snapshot) => {
+//       const currentHP = snapshot.val();
+//       if (currentHP <= 0) {
+//         // Disable buttons and show saving throw button if the player is dead
+//         document.getElementById("meleeAttackRollButton").disabled = true;
+//         document.getElementById("rangedAttackRollButton").disabled = true;
+//         document.getElementById("savingThrowButton").style.display = "inline";
+//       } else {
+//         // Enable buttons if the player is alive
+//         document.getElementById("meleeAttackRollButton").disabled = false;
+//         document.getElementById("rangedAttackRollButton").disabled = false;
+//         document.getElementById("savingThrowButton").style.display = "none";
+//       }
+//     },
+//     { onlyOnce: true }
+//   );
+// }
 
 function enablePlayerAction(playerId) {
-  console.log(currentUID);
+  console.log("current turn: ", currentUID);
+  console.log("your id: ", auth.currentUser.uid);
   if (currentUID == auth.currentUser.uid) {
     document.getElementById("meleeAttackRollButton").disabled = false;
     document.getElementById("rangedAttackRollButton").disabled = false;
@@ -173,7 +174,7 @@ function enablePlayerAction(playerId) {
     document.getElementById("perceptionRollButton").disabled = true;
   }
 
-  validatePlayerActions(playerId); // Check if the player is dead or alive and adjust buttons
+  // validatePlayerActions(playerId); // Check if the player is dead or alive and adjust buttons
 }
 
 // Ensure buttons are reset at the beginning of each turn
@@ -187,7 +188,7 @@ function enablePlayerActions(playerId) {
   document.getElementById("stealthRollButton").disabled = true;
   document.getElementById("perceptionRollButton").disabled = true;
 
-  validatePlayerActions(playerId); // Check if the player is dead or alive and adjust buttons
+  // validatePlayerActions(playerId); // Check if the player is dead or alive and adjust buttons
 }
 
 // Function to handle the saving throw logic
@@ -461,7 +462,7 @@ function restorePlayerTurn(playerId, nextIndex) {
 document
   .getElementById("meleeAttackRollButton")
   .addEventListener("click", () => {
-    document.getElementById("meleeAttackRollButton").disabled = true;
+    // document.getElementById("meleeAttackRollButton").disabled = true;
     const attackRoll = rollDie(20);
 
     if (attackRoll >= 10) {
@@ -477,7 +478,7 @@ document
 document
   .getElementById("rangedAttackRollButton")
   .addEventListener("click", () => {
-    document.getElementById("rangedAttackRollButton").disabled = true;
+    // document.getElementById("rangedAttackRollButton").disabled = true;
     const attackRoll = rollDie(20);
 
     if (attackRoll >= 10) {
@@ -489,11 +490,12 @@ document
     }
   });
 
+initializeTurnOrder();
+
 // Initialize and display health data when the page loads
 document.addEventListener("DOMContentLoaded", () => {
   getPlayerNow();
   displayHealthData();
-  initializeTurnOrder();
 
   // Event listener for saving throw button
   document.getElementById("savingThrowButton").addEventListener("click", () => {
